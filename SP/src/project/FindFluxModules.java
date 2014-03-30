@@ -105,32 +105,53 @@ public class FindFluxModules{
 			double[] newObjective = new double[numR];
 			newObjective[r] = 1;
 			
-			LinearProgram lp = new LinearProgram(newObjective);
-			lp.addConstraints(con);
-			lp.setMinProblem(false); 
-			double[] solved = solver.solve(lp);
+			LinearProgram lpMax = new LinearProgram(newObjective);
+			lpMax.addConstraints(con);
+			lpMax.setMinProblem(false); 
+			
+			LinearProgram lpMin = new LinearProgram(newObjective);
+			lpMin.addConstraints(con);
+			lpMin.setMinProblem(true); 
+						
+			double[] solvedMax = solver.solve(lpMax);
+			double[] solvedMin = solver.solve(lpMax);
 
 			for(int w=0;w<numR;w++){
-				System.out.print(solved[w]+" ");
+				System.out.print(solvedMax[w]+" ");
 			}
 			System.out.println();
 			
 int count=0;
 for(int zu=0;zu<numR;zu++){
-	if(solved[zu] != 0){
+	if(solvedMax[zu] != 0){
 		count++;
 	}
 	
 	for(int e=0;e<numR;e++){
-		if(firstVector[e] !=  solved[e] ){
+		if(firstVector[e] !=  solvedMax[e] || firstVector[e] !=  solvedMin[e] || solvedMin[e] !=  solvedMax[e] ){
 			isNotConstant[e] = 1.0;
 		}
 	}
+
+	//firstVector = solved; sinnvoll???? zählt höher...
+
 	
 }
 System.out.println("#!=0: " + count + " /Number: " + r);	
 			} 
-		}		
+		}	
+		System.out.println();
+		for(int w=0;w<numR;w++){
+			System.out.print(isNotConstant[w]+" ");
+		}
+		
+		int nichtEinsen = 0;
+		for(double x:isNotConstant){
+			if(x!=1.0){
+				nichtEinsen++;
+			}
+		}
+		System.out.println("\nnichtNullen :" + nichtEinsen);
 	}
 	
 	//calculate optimum S*v=0. find all vectors which solve the equation and maximize x.
