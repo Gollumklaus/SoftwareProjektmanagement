@@ -1,6 +1,7 @@
 package project;
 
 import org.sbml.jsbml.Reaction;
+import org.sbml.jsbml.Species;
 
 import java.util.*;
 
@@ -24,5 +25,5 @@ public interface Module {
 	 * Return the interface flux vector.
 	 * @return
 	 */
-	public Map<Reaction, Double> getInterface();
+	public Map<Species, Double> getInterface();
 }

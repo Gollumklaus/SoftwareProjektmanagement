@@ -74,7 +74,6 @@ public class SBMLLoad {
 	//load model
 	public void loadSBML(String path) throws XMLStreamException, IOException{
 		file = new File(path);
-		System.out.println("loading SBML file");
 		SBMLDocument d = SBMLReader.read(file);
 		model = d.getModel();
 		
@@ -101,7 +100,7 @@ public class SBMLLoad {
 		objectiveFunction = new double[numR];
 		lowerBound = new double[numR];
 		upperBound = new double[numR];
-int count =0;		
+	
 		for(int i=0;i<numR;i++){
 			Reaction r = model.getReaction(i);
 			KineticLaw k = r.getKineticLaw();
@@ -121,8 +120,6 @@ int count =0;
 			else{
 				objectiveFunction[i] = 1;
 				biomassOptValuePos = i;
-				System.out.println("para: "+v);
-				System.out.println("rct: "+r.getId());
 			}
 			
 		}
