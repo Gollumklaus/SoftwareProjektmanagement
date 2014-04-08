@@ -18,7 +18,7 @@ public class MainClass {
 		
 			if(args.length>0){		
 				try {
-					System.out.println("loading SBML file");
+					System.out.println("Loading SBML file");
 					load.loadSBML(args[0]);
 				} catch (XMLStreamException | IOException e) {
 					e.printStackTrace();
@@ -27,7 +27,7 @@ public class MainClass {
 			}
 			else{
 				try {
-					System.out.println("loading SBML file");
+					System.out.println("Loading SBML file");
 					load.loadSBML("/home/guru/Downloads/S_aureus_iSB619.xml");
 				} catch (XMLStreamException | IOException e) {
 					e.printStackTrace();

@@ -3,7 +3,8 @@ package project;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import lpsolve.LpSolveException;
 
@@ -21,15 +22,25 @@ import scpsolver.util.SparseMatrix;
 
 // boolean = s.getBoundaryCondition();
 
-public class FindFluxModules{
+public class FindFluxModules implements Module, Modules{
 	
 SBMLLoad load;
 double biomassOptValue = 0;
-	
+ArrayList<ArrayList<Reaction>> adjacency = new ArrayList<ArrayList<Reaction>>();
+ArrayList<ArrayList<Reaction>> vVectors = new ArrayList<ArrayList<Reaction>>();
+ArrayList<Integer> whichRctIsModule = new ArrayList<Integer>();
+
+
+
 	public double getBiomassOptValue(){
 		return biomassOptValue;
 	}
-
+	public ArrayList<Integer> getWhichRctIsModule(){
+		return whichRctIsModule;
+	}
+	public ArrayList<ArrayList<Reaction>> getAdjacency(){
+		return adjacency;
+	}
 
 	public FindFluxModules(SBMLLoad load){
 		this.load = load;
@@ -47,19 +58,21 @@ double biomassOptValue = 0;
 		System.out.println("Loading LP Solver");
 		LinearProgramSolver solver  = SolverFactory.newDefault(); 
 		
+		System.out.println("Solving LP for biomassreaction");
 		double[] vBiomass = optimize(solver, rctMetArr);
 		
 		//find min max values
+		System.out.println("Finding set V");
 		boolean[] isConstant = minMax(vBiomass,solver,rctMetArr);
 		
 		
-		
+		System.out.println("Finding minimal modules");
 		computeMinModules(isConstant, rctMetArr,solver);
 	}	
 
 	//compute minimal Modules
 	public void computeMinModules(boolean[] isConstant, SparseMatrix rctMetArr, LinearProgramSolver solver){
-		
+	
 		int numV = 0; 
 		for(boolean x: isConstant){
 			if(!x){numV++;}
@@ -69,12 +82,10 @@ double biomassOptValue = 0;
 		double[] objectiv = new double[numV];
 		LinearProgram lp = new LinearProgram(objectiv);
 		ArrayList<LinearConstraint> constraints = new ArrayList<LinearConstraint>();
-		ArrayList<ArrayList<Integer>> modules = new ArrayList<ArrayList<Integer>>();
 		int posInX = 0;
+		int posInModules = 0;
 		for(int i=0;i<load.getNumR();i++){
-			System.out.println(i);
 			if(!isConstant[i]){
-				System.out.println("--not constant var");
 				//set constraints
 				double[] sR = new double[load.getNumS()];
 				for(int k=0;k<load.getNumS();k++){
@@ -92,15 +103,17 @@ double biomassOptValue = 0;
 				}
 			
 				double[] solved = solver.solve(lp);
-				System.out.println("length from solved: " +solved.length+"\nlength from numS: "+load.getNumS());
 				if(lp.isFeasable(solved)){
-					ArrayList<Integer> neighbour = new ArrayList<Integer>();
-					for(int h=0;h<load.getNumS();h++){
+					ArrayList<Reaction> neighbour = new ArrayList<Reaction>();
+					for(int h=0;h<numV;h++){
 						if(solved[h] != 0){
-							neighbour.add(h);
+							Reaction r = load.getModel().getReaction(h);
+							neighbour.add(r);
 						}
 					}
-					modules.add(i,neighbour);
+					adjacency.add(posInModules,neighbour);
+					posInModules++;
+					whichRctIsModule.add(i);
 				}
 				else{
 					for(int u=0;u<load.getNumS();u++){
@@ -160,47 +173,31 @@ double biomassOptValue = 0;
 		boolean[] isConstant = new boolean[load.getNumR()];// = objectiveFunction;
 		isConstant[load.getBiomassOptValuePos()] = true;
 	
-		
-	for(int z=0;z<load.getNumR();z++){
-		System.out.println(isConstant[z]);
-	}
 	
 	
 		for(int r=0;r<load.getNumR();r++){
 			if(!isConstant[r]){
-			double[] newObjective = new double[load.getNumR()];
-			newObjective[r] = 1;
-			
-			LinearProgram lpMax = new LinearProgram(newObjective);
-			lpMax.addConstraints(constraints);
-			lpMax.setMinProblem(false); 
-			
-			LinearProgram lpMin = new LinearProgram(newObjective);
-			lpMin.addConstraints(constraints);
-			lpMin.setMinProblem(true); 
-						
-			double[] solvedMax = solver.solve(lpMax);
-			double[] solvedMin = solver.solve(lpMax);
-
-
-			
-int count=0;
-for(int zu=0;zu<load.getNumR();zu++){
-	if(solvedMin[zu] != 0){
-		count++;
-	}
-}
-	for(int e=0;e<load.getNumR();e++){
-		if(Math.abs(firstVector[e]-solvedMax[e])>1e-6 || Math.abs(firstVector[e] - solvedMin[e])>1e-6){
-			isConstant[e] = true;
-		}
-	}
-
+				double[] newObjective = new double[load.getNumR()];
+				newObjective[r] = 1;
+				
+				LinearProgram lpMax = new LinearProgram(newObjective);
+				lpMax.addConstraints(constraints);
+				lpMax.setMinProblem(false); 
+				
+				LinearProgram lpMin = new LinearProgram(newObjective);
+				lpMin.addConstraints(constraints);
+				lpMin.setMinProblem(true); 
+							
+				double[] solvedMax = solver.solve(lpMax);
+				double[] solvedMin = solver.solve(lpMax);
 	
+			
+				for(int e=0;e<load.getNumR();e++){
+					if(Math.abs(firstVector[e]-solvedMax[e])>1e-6 || Math.abs(firstVector[e] - solvedMin[e])>1e-6){
+						isConstant[e] = true;
+					}
+				}
 
-	
-
-System.out.println("#!=0: " + count + " /Number: " + r);	
 			} 
 		}	
 
@@ -286,8 +283,23 @@ System.out.println("#!=0: " + count + " /Number: " + r);
 		return rctMetArr;
 	}
 
-	public Modules getModules(){
+	public Modules Modules(){
 		throw new RuntimeException("Noch nicht implementiert.");
+	}
+	@Override
+	public Set<Reaction> getReactions() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public Map<Species, Double> getInterface() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public Set<Module> getModules() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }

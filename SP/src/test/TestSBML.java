@@ -41,7 +41,8 @@ public class TestSBML {
 		double[] upp = load.getUpperBound();
 		
 		//build matrix
-		SparseMatrix rctMetArr = FindFluxModules.matrixBuild(numR,numS,met,m);
+		FindFluxModules ff = new FindFluxModules(load);
+		SparseMatrix rctMetArr = ff.matrixBuild();
 	}
 	
 /*	
