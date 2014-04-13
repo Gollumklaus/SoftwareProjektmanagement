@@ -34,53 +34,15 @@ public class TestComputeModules {
 		assertTrue(load != null);
 	}
 
-//sbmlload
-	@Test 
-	public void SBMLSetParameter(){
-		assertNotNull(load.getBiomassOptValuePos());
-		assertTrue(load.getNumR() != 0);
-		assertTrue(load.getNumS() != 0);
-		assertNotNull(load.getModel());
-		assertNotNull(load.getObjectiveFunction());
-		assertTrue(load.getRct().length==load.getNumR());
-		assertTrue(load.getMet().length==load.getNumS());
-		assertTrue(load.getLowerBound().length==load.getNumR());
-		assertTrue(load.getUpperBound().length==load.getNumR());
-		
-		int count = 0;
-		for(int i=0;i<load.getNumR();i++){
-			if(load.getObjectiveFunction()[i] == 1){
-				count++;
-			}
-		}
-		assertTrue(count == 1);
-	}
-
-//rctmetmatrix
+	
 	@Test
-	public void correctRctMetMatrix(){	//compares parameter in matrix with real number of reactants/products
+	public void testMinMax(){
 		
-		FindFluxModules ff = new FindFluxModules(load);
-		SparseMatrix sm = ff.matrixBuild();
-		int count = 0;
-		for(int i=0;i<load.getNumR();i++){
-			for(int k=0;k<load.getNumS();k++){
-				if(sm.get(i,k) != 0){
-					count++;
-				}
-			}
-		}
-		Model m = load.getModel();
-		int real = 0;
-		for(int i=0;i<load.getNumR();i++){
-			Reaction r = m.getReaction(i);
-				real += r.getNumReactants();
-				real+= r.getNumProducts();
-		}
-		assertTrue(count == real);
 	}
 	
+
 //optimize
+	@Test
 	public void FindFluxModules_optimizeParameterControl() throws LpSolveException{
 		FindFluxModules ff = new FindFluxModules(load);
 		LinearProgramSolver solver  = SolverFactory.newDefault(); 
@@ -98,13 +60,12 @@ public class TestComputeModules {
 		FindFluxModules ff = new FindFluxModules(load);
 		SparseMatrix rctMetArr = ff.matrixBuild();
 		LinearProgramSolver solver  = SolverFactory.newDefault(); 
+		
 		double[] solved = ff.optimize(solver,rctMetArr);
 		boolean[] isConstant = new boolean[load.getNumR()];
 		ff.computeMinModules(isConstant, rctMetArr, solver);
 		
 	}
-	
-	
 	
 	@Test
 	public void testComputeModules() {
