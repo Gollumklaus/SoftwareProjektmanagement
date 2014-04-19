@@ -15,8 +15,11 @@ import org.sbml.jsbml.Reaction;
 
 import project.FindFluxModules;
 import project.SBMLLoad;
+import scpsolver.constraints.LinearConstraint;
+import scpsolver.constraints.LinearEqualsConstraint;
 import scpsolver.lpsolver.LinearProgramSolver;
 import scpsolver.lpsolver.SolverFactory;
+import scpsolver.problems.LinearProgram;
 import scpsolver.util.SparseMatrix;
 
 public class TestComputeModules {
@@ -26,12 +29,20 @@ public class TestComputeModules {
 	@Before
 	public void setUp() throws XMLStreamException, IOException {
 		load = new SBMLLoad();
-		load.loadSBML("/home/guru/Downloads/S_cerevisiae_iND750.xml");
+		load.loadSBML("/home/guru/Downloads/S_aureus_iSB619.xml");
 	}
 	
 	@Test
-	public void isSetUp() {
-		assertTrue(load != null);
+	public void testMinModules() throws LpSolveException{
+		boolean[] var = {false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,false,true,false,false,true,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,true,false,false,false,false,false,false,false,false,false,true,false,true,true,false,false,false,false,true,true,false,true,false,true,true,true,false,true,true,false,false,true,true,false,true,true,false,false,false,false,false,true,true,false,false,true,true,false,true,true,true,false,false,false,true,true,false,false,true,false,true,false,false,false,true,false,false,true,true,true,true,false,false,true,true,false,false,false,false,false,true,false,false,false,true,false,true,false,false,false,false,true,true,true,false,true,true,false,true,false,false,false,true,false,false,true,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,true,true,true,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,true,false,false,true,false,false,false,false,false,false,true,false,true,true,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,true,false,false,false,true,false,false,false,true,true,true,false,false,true,true,true,false,false,true,true,false,false,true,false,false,false,false,true,false,false,true,true,true,true,true,false,false,false,false,true,false,true,true,false,true,true,false,false,true,true,true,false,false,true,true,false,false,false,true,false,true,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,true,false,false,false,false,false,false,true,true,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,true,true,false,true,true,false,false,true,true,true,false,true,false,false,false,false,false,true,true,true,false,false,true,false,false,false,false,false,true,true,true,true,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,true,true,false,false,false,false,false,true,false,false,true,true,true,true,false,false,true,true,true,false,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,true,true,false,true,false,false,true,true,false,false,true,false,false,false,true,true,true,true,false,true,true,true,true,true,false,false,true,false,false,false,false,false,true,true,false,false,false,false,false,false,false,true,true,true,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,false,false,true,true,false,true,false,true,false,false,false,true,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,true,false,false,true,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,true,false,false,true,true,true,true,false,false,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false};
+		
+		
+		FindFluxModules ff = new FindFluxModules(load);
+		SparseMatrix rctMetArr = ff.matrixBuild();
+		LinearProgramSolver solver  = SolverFactory.newDefault(); 
+		
+		ff.computeMinModules(var, rctMetArr, solver);
+		
 	}
 
 	
@@ -53,6 +64,24 @@ public class TestComputeModules {
 		double opt = ff.getBiomassOptValue();
 		assertTrue(opt>0);
 	}
+	
+	@Test
+	public void testForMinModules(){
+		SparseMatrix test = new SparseMatrix(6,6);
+		test.set(0,0,-1);test.set(0,1,1);test.set(1,0,1);test.set(1,1,-1);test.set(2,2,-1);
+		test.set(2,3,1);test.set(3,3,-1);test.set(3,4,1);test.set(4,2,1);test.set(4,4,-1);
+		boolean[] isVariable = {true,true,true,true,true,false};
+		LinearProgramSolver solver  = SolverFactory.newDefault(); 
+		SBMLLoad load2 = new SBMLLoad();
+		load2.numS = 5;
+		load2.numR = 5;
+		
+		FindFluxModules ff = new FindFluxModules(load2);
+		ff.computeMinModules(isVariable, test, solver);
+		ff.printModules();
+
+	}
+	
 	
 //minMax
 	@Test

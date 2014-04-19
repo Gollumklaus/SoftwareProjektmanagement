@@ -38600,3 +38600,7 @@
 [14:31:45,705  WARN SBMLCoreParser:806] - The element parameter is not recognized
 [14:31:45,706  WARN SBMLCoreParser:806] - The element parameter is not recognized
 [14:31:45,707  WARN SBMLCoreParser:806] - The element parameter is not recognized
+[07:46:26,945  WARN SBMLCoreParser:355] - Could not recognize the attribute 'constant' on the element parameter. Please check the SBML specifications.
+[07:46:26,998  WARN SBMLCoreParser:355] - Could not recognize the attribute 'constant' on the element parameter. Please check the SBML specifications.
+[07:46:26,999  WARN SBMLCoreParser:355] - Could not recognize the attribute 'constant' on the element parameter. Please check the SBML specifications.
+[07:46:27,001  WARN SBMLCoreParser:355] - Could not recognize the attribute 'constant' on the element parameter. Please check the SBML specifications.

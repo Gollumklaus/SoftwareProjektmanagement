@@ -20,9 +20,9 @@ public class SBMLLoad {
 
 		//these variables get set by loadSBML
 			//number of reactions
-			private int numR;
+			public int numR;
 			//number of metabolites (species)
-			private int numS;
+			public int numS;
 			//model
 			private Model model;
 			//id's of all reactions

@@ -17,7 +17,7 @@ import scpsolver.lpsolver.LinearProgramSolver;
 import scpsolver.lpsolver.SolverFactory;
 import scpsolver.problems.LinearProgram;
 import scpsolver.util.SparseMatrix;
-
+import scpsolver.constraints.Constraint;
 // boolean = s.getBoundaryCondition();
 
 public class FindFluxModules implements Modules{
@@ -40,7 +40,7 @@ public class FindFluxModules implements Modules{
 	
 SBMLLoad load;
 double biomassOptValue = 0;
-ArrayList<ArrayList<Reaction>> adjacency = new ArrayList<ArrayList<Reaction>>();
+ArrayList<ArrayList<Integer>> adjacency = new ArrayList<ArrayList<Integer>>();
 ArrayList<ArrayList<Reaction>> vVectors = new ArrayList<ArrayList<Reaction>>();
 ArrayList<Integer> whichRctIsModule = new ArrayList<Integer>();
 int numV = 0;
@@ -52,7 +52,7 @@ int numV = 0;
 	public ArrayList<Integer> getWhichRctIsModule(){
 		return whichRctIsModule;
 	}
-	public ArrayList<ArrayList<Reaction>> getAdjacency(){
+	public ArrayList<ArrayList<Integer>> getAdjacency(){
 		return adjacency;
 	}
 
@@ -77,11 +77,11 @@ int numV = 0;
 		
 		//find min max values
 		System.out.println("Finding set V");
-		boolean[] isConstant = minMax(vBiomass,solver,rctMetArr);
+		boolean[] isVariable = minMax(vBiomass,solver,rctMetArr);
 		
 		
 		System.out.println("Finding minimal modules");
-		computeMinModules(isConstant, rctMetArr,solver);
+		computeMinModules(isVariable, rctMetArr,solver);
 		
 		System.out.println("printing modules");
 		printModules();
@@ -90,76 +90,97 @@ int numV = 0;
 	
 	//print modules
 	public void printModules(){
-		for(int i=0;i<numV;i++){
-			ArrayList<Reaction> t = adjacency.get(i);
+		for(int i=0;i<adjacency.size();i++){
+			ArrayList<Integer> t = adjacency.get(i);
 			int c = t.size();
+			pr("\nModul number "+ i+":\t");
 			for(int w=0;w<c;w++){
-				Reaction r = t.get(w);
-				String p = r.getId();
-				System.out.println(p);
+				System.out.print(t.get(w)+" ");
 			}
 			//pr("\n");
 		}
 	}
-	//compute minimal Modules
-	public void computeMinModules(boolean[] isConstant, SparseMatrix rctMetArr, LinearProgramSolver solver){	
 	
-		for(boolean x: isConstant){
-			if(!x){numV++;}
-		}
-									//OUTPUTPRINT: print numV & isConstant (C = constant, . = variable)
-										pr("final isConstant:  ");for(int i=0;i<load.getNumR();i++){String w=null;if(isConstant[i]){w="C";}else{w=".";}System.out.print(w);}System.out.println("\nrct not const"+numV+"\t alle rct"+load.getNumR());
-		
-		SparseMatrix x = new SparseMatrix(numV, load.getNumS());
-		double[] objectiv = new double[numV];
-		LinearProgram lp = new LinearProgram(objectiv);
-		lp.setMinProblem(false);
-		
-		ArrayList<LinearConstraint> constraints = new ArrayList<LinearConstraint>();
-		int posInX = 0;
-		int posInModules = 0;
-		
-		for(int i=0;i<load.getNumR();i++){
-			if(!isConstant[i]){
-				//set constraints
-				double[] sR = new double[load.getNumS()];
-				for(int k=0;k<load.getNumS();k++){
-					sR[k] = - rctMetArr.get(i,k);
-				}
-				for(int t=0;t<load.getNumS();t++){
-					double[] columnOfX = new double[load.getNumS()];
-					for(int s=0;s<numV;s++){
-						columnOfX[t] = x.get(s,t);
-					}
+	
+	//compute minimal Modules
+	public void computeMinModules(boolean[] isVariable, SparseMatrix test, LinearProgramSolver solver){	
+	
+		for(boolean x: isVariable){
+			if(x){numV++;}
+		} 
+							
+		boolean[] notIgnore = new boolean[numV];
+		notIgnore[0] = true; 
+		//every round one new lp for all variable reaction
+		int numOfReactionOnLHS = 1;
+		int reactionNum = 1;
+					//start at e=1 (countVar=1 and notIgnore[0]=true) because first equation can be skipped
+		for(int e=1;e<load.getNumR();e++){
+			if(isVariable[e]){
+				//print position
+				//pr("LP: "+ reactionNum + "\n");
+				
+				//setting all constraints
+				ArrayList<LinearConstraint> constraints = new ArrayList<LinearConstraint>();
+				int[] rememberRctPos = new int[reactionNum];
+				
+				//set ergebnis
+				double[] ergebnis =  new double[load.getNumS()];
+				for(int u=0;u<load.getNumS();u++){
+					ergebnis[u] = -test.get(e,u);
+				} 
+				
+				for(int i=0;i<load.getNumS();i++){
 					
-					LinearConstraint lc = new LinearEqualsConstraint(columnOfX, sR[t], null);
-					constraints.add(lc);
-					 
-				}
-			
-				double[] solved = solver.solve(lp);
-				
-				
-				if(lp.isFeasable(solved)){
-					ArrayList<Reaction> neighbour = new ArrayList<Reaction>();
-					for(int h=0;h<numV;h++){
-						if(Math.abs(solved[h])>1e-4){
-							Reaction r = load.getModel().getReaction(h);
-							neighbour.add(r);
+					double[] con = new double[numOfReactionOnLHS];
+					
+					//set con
+					int skipper = 0;
+					for(int k=0;k<reactionNum;k++){
+						if(notIgnore[k]){
+							con[skipper] = test.get(k, i);
+							rememberRctPos[skipper] = k;
+							skipper++;
 						}
 					}
-					adjacency.add(posInModules,neighbour);
-					posInModules++;
-					whichRctIsModule.add(i);
+					LinearConstraint lc = new LinearEqualsConstraint(con, ergebnis[i], null);
+					constraints.add(lc);
+				}
+			
+				double[] objective = new double[numOfReactionOnLHS];
+				LinearProgram lp = new LinearProgram(objective);
+				lp.addConstraints(constraints);
+				double[] result = solver.solve(lp);
+				
+					/*									//PRINT
+														ArrayList<Constraint> litt = lp.getConstraints();
+														for(Constraint p : litt){
+															double[] weigth = ((LinearConstraint) p).getC();
+															for(double kl : weigth){System.out.print(kl + " ");};															
+															System.out.println( " = " + p.getRHS());														
+														}
+														pr("\nResult: ");
+														for(double j:result){System.out.print(j+"    ");}pr("\n");
+				*/
+														
+				if(lp.isFeasable(result)){
+					ArrayList<Integer> neighbour = new ArrayList<Integer>();
+					neighbour.add(e);
+					for(int h=0;h<numOfReactionOnLHS;h++){
+						if(Math.abs(result[h])>1e-4){
+							neighbour.add(rememberRctPos[h]);
+						}
+					}
+					adjacency.add(neighbour);
+					whichRctIsModule.add(e);
 				}
 				else{
-					for(int u=0;u<load.getNumS();u++){
-						x.set(posInX,u,sR[u]);
-					}
-					posInX++;
+					notIgnore[reactionNum] = true;
+					numOfReactionOnLHS++;					 
 				}
+				reactionNum++;	
 			}
-		}	
+		}
 	}
 	
 	
@@ -192,13 +213,17 @@ int numV = 0;
 			constraints.add(biomass);
 			
 		//set objective function and detect differences for each reaction, to find V
-		boolean[] isConstant = new boolean[load.getNumR()];
-		isConstant[load.getBiomassOptValuePos()] = true;
-	
-	
-	
+		boolean[] isVariable = new boolean[load.getNumR()];
+		double[] maxValue = new double[load.getNumR()];
+		double[] minValue = new double[load.getNumR()];
+		for(int q=0;q<load.getNumR();q++){
+			maxValue[q] = firstVector[q];
+			minValue[q] = firstVector[q];
+		}
+		
+		
 		for(int r=0;r<load.getNumR();r++){
-			if(!isConstant[r]){
+			if(!isVariable[r]){	//if u dont know if its variable, we test
 								//OUTPUTPRINT: print which rct 
 									pr("reaction Number: ");System.out.println(r);
 				double[] newObjective = new double[load.getNumR()];
@@ -220,23 +245,44 @@ int numV = 0;
 				
 				double[] solvedMax = solver.solve(lpMax);
 				double[] solvedMin = solver.solve(lpMax);
-	
-			
+														System.out.println("solved Max  " +solvedMax.length);
+														System.out.println("solved Min  " +solvedMax.length);
+														System.out.println("numR  "+load.getNumR());
+														System.out.println("numS  "+load.getNumS());
+				if(!lpMin.isFeasable(solvedMin)){
+					solvedMin = firstVector;
+				}
+				if(!lpMax.isFeasable(solvedMax)){
+					solvedMax = firstVector;
+				}
+				
 				for(int e=0;e<load.getNumR();e++){
 					if(Math.abs(firstVector[e]-solvedMax[e])>1e-4 || Math.abs(firstVector[e] - solvedMin[e])>1e-4){
-						isConstant[e] = true;
+						isVariable[e] = true;
+						maxValue[e] = Math.max(Math.max(maxValue[e], solvedMax[e]), solvedMin[e]);
+						minValue[e] = Math.min(Math.min(minValue[e], solvedMin[e]), solvedMax[e]);
 					}
 				}
 										//OUTPUTPRINT: print solvedMax/solvedMin & #numbers in both arrays unequal zero
 											pr("\tsolvedMax: ");for(int pp=0;pp<load.getNumR();pp++){System.out.print(solvedMax[pp]+" ");	}pr("\n");
-											pr("\tsolvedMin: ");for(int pp=0;pp<load.getNumR();pp++){System.out.print(solvedMax[pp]+" ");	}pr("\n");
-											int c=0;for(int i=0;i<load.getNumR();i++){if(Math.abs(solvedMax[i])<1e-4){c++;}}System.out.println("\tMax ungleich null: "+c);
-											int t=0;for(int i=0;i<load.getNumR();i++){if(Math.abs(solvedMin[i])<1e-4){t++;}}System.out.println("\tMin ungleich null: "+t);
-											pr("\tisConstant: ");for(int i=0;i<load.getNumR();i++){String w=null;if(isConstant[i]){w="C";}else{w=".";}System.out.print(w);}
+											pr("\tsolvedMin: ");for(int pp=0;pp<load.getNumR();pp++){System.out.print(solvedMin[pp]+" ");	}pr("\n");
+											int c=0;for(int i=0;i<load.getNumR();i++){if(Math.abs(solvedMax[i])<1e-4){c++;}}System.out.println("\tMax gleich null: "+c);
+											int t=0;for(int i=0;i<load.getNumR();i++){if(Math.abs(solvedMin[i])<1e-4){t++;}}System.out.println("\tMin gleich null: "+t);
+											pr("\tisConstant: ");for(int i=0;i<load.getNumR();i++){String w=null;if(!isVariable[i]){w="C";}else{w=".";}System.out.print(w);}
 											pr("\n");} 
 		}	
-
-		return isConstant;
+		for(int uh=0;uh<load.getNumR();uh++){
+			if(isVariable[uh]){
+			System.out.println(maxValue[uh]+" : "+minValue[uh]);
+		
+			}
+		}	
+		pr("{");
+		for(int z=0;z<load.getNumR();z++){
+			System.out.print(isVariable[z] + ",");
+		}
+		pr("}");
+		return isVariable;
 	}
 	
 	//calculate optimum S*v=0. find all vectors which solve the equation and maximize x.
