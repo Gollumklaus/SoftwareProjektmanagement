@@ -65,7 +65,7 @@ public class TestComputeModules {
 		assertTrue(opt>0);
 	}
 	
-	@Test
+	@Test	//with 
 	public void testForMinModules(){
 		SparseMatrix test = new SparseMatrix(6,6);
 		test.set(0,0,-1);test.set(0,1,1);test.set(1,0,1);test.set(1,1,-1);test.set(2,2,-1);
@@ -79,7 +79,6 @@ public class TestComputeModules {
 		FindFluxModules ff = new FindFluxModules(load2);
 		ff.computeMinModules(isVariable, test, solver);
 		ff.printModules();
-
 	}
 	
 	
