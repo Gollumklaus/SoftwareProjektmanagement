@@ -13,6 +13,11 @@ import org.sbml.jsbml.SBMLDocument;
 import org.sbml.jsbml.SBMLReader;
 import org.sbml.jsbml.Species;
 
+/**<code>SBMLLoad</code> loads the SBML document and provide all loaded variable due to getter and setter methods to the public.
+ * <p>
+ * @author guru
+ */
+
 public class SBMLLoad {
 
 	// these variables get set by loadSBML
@@ -78,6 +83,13 @@ public class SBMLLoad {
 	}
 
 	// load model
+	/**<code>loadSBML()</code> load the Model, the number of Reactions/Species, the lower/upper bounds and the objective coefficients from the provided SBML document.
+	 * <p>The method sets also the objective function.
+	 * <p> 
+	 * @param path
+	 * @throws XMLStreamException
+	 * @throws IOException
+	 */
 	public void loadSBML(String path) throws XMLStreamException, IOException {
 		file = new File(path);
 		SBMLDocument d = SBMLReader.read(file);

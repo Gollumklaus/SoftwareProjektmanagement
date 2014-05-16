@@ -14,7 +14,15 @@ import scpsolver.lpsolver.SolverFactory;
 import scpsolver.problems.LinearProgram;
 import scpsolver.util.SparseMatrix;
 
-// boolean = s.getBoundaryCondition();
+
+
+/**<code>FindFluxModules</code> calculates the flux modules of a metabolic network.
+ * <p> 
+ * The class needs the information of the class <code>SBMLLoad</code>.
+ * <p>
+ * @author guru
+ *
+ */
 
 public class FindFluxModules{
 
@@ -44,7 +52,11 @@ public class FindFluxModules{
 		this.ignore = ignore;
 	}
 
-	// findFlux: "main replacement"... call all needed methods
+	/**<code>findFlux()</code> calls all methods in <code>FindFluxModules.java</code> and passes the arguments between them.
+	 * <p> 
+	 * @throws LpSolveException
+	 * @throws FileNotFoundException
+	 */
 	public void findFlux() throws LpSolveException, FileNotFoundException {
 		
 		// build matrix
@@ -70,8 +82,10 @@ public class FindFluxModules{
 		System.out.println("printing modules:");
 		printModules();
 	}
-
-	// print modules
+	/**<code>printModules()</code> print the ID's of the modules to the standard output.
+	 * <p> 
+	 * The modules are separated by lines.
+	 */
 	public void printModules() {
 		for (int i = 0; i < adjacency.size(); i++) {
 			ArrayList<Integer> t = adjacency.get(i);
@@ -87,7 +101,16 @@ public class FindFluxModules{
 			System.out.print(id + "\n");
 		}
 	} 
-
+	
+	
+	/**<codes>dfs</code> makes an depth first search over a matrix.
+	 * <p> 
+	 * The boolean array just says which variables in the matrix can be ignored and which not.
+	 * <p> The results are saved in the class variable <code>adjacency</code>
+	 * 
+	 * @param isVariable
+	 * @param dfsArray
+	 */
 	public void dfs(boolean[] isVariable, SparseMatrix dfsArray){
 		boolean[] grey = new boolean[load.getNumR()];
 		for(int i=0;i<numV;i++){
@@ -102,6 +125,16 @@ public class FindFluxModules{
 			}
 		}
 	}
+	
+	
+	/**<code>dfsHelp()</code> exists only for the recursion of <codes>dfs()</code>.
+	 * <p> 
+	 * @param i
+	 * @param isVariable
+	 * @param grey
+	 * @param dfsArray
+	 * @param neighbour
+	 */
 	public void dfsHelp(int i, boolean[] isVariable, boolean[] grey, SparseMatrix dfsArray, ArrayList<Integer> neighbour){
 		grey[i] = true;
 		for(int k=0;k<load.getNumR();k++){
@@ -114,7 +147,15 @@ public class FindFluxModules{
 		neighbour.add(i);
 	}
 	
-	// compute minimal Modules
+	
+	/**<code>computeMinModules</code> calculates with linear programming the dependent 
+	 * sets of the stoichiometric vectors of the variable reactions.
+	 * <p>
+	 * @param isVariable
+	 * @param rctMetArr
+	 * @param solver
+	 * @return A SparseMatrix which represents a graph.
+	 */
 	public SparseMatrix computeMinModules(boolean[] isVariable, SparseMatrix rctMetArr, LinearProgramSolver solver) {
 
 		for (boolean x : isVariable) {
@@ -124,15 +165,17 @@ public class FindFluxModules{
 		}
 
 		boolean[] notIgnore = new boolean[numV];
-		notIgnore[0] = true;
-
+		if(numV>0){
+			notIgnore[0] = true;
+		}
 		// every round one new lp for all variable reaction
 		int numOfReactionOnLHS = 1;
-		int reactionNum = 1;
+		int reactionNum = 0;
+		
 		// start at e=1 (countVar=1 and notIgnore[0]=true) because first
 		// equation can be skipped
 		
-		//array for deepsearch
+		//array for depth first search 
 		SparseMatrix dfsArray = new SparseMatrix(load.getNumR(),load.getNumR());
 				
 		//print
@@ -144,7 +187,6 @@ public class FindFluxModules{
 			System.out.println("\t|0%       |10%      |20%      |30%      |40%      |50%      |60%      |70%      |80%      |90%      |100%");
 			pr("\t");
 		}
-		
 		
 		for (int e = 1; e < load.getNumR(); e++) {
 			if (isVariable[e]) {
@@ -219,13 +261,16 @@ public class FindFluxModules{
 	}
 
 	
-	
-	
-	
-	
-	
-	
-	// calculate min and max values for each reaction
+	/**<code>minMax()</code> execute for all reactions a flux variability analysis. 
+	 * <p>
+	 * The method compares every minimisation value and maximisation value of a flux balance analysis of a reaction. If both values are not equal,
+	 * the reaction is variable and can be skipped in further computing.
+	 * <p>
+	 * @param firstVector
+	 * @param solver
+	 * @param rctMetArr
+	 * @return A boolean array which elements are true for all variable values. 
+	 */
 	public boolean[] minMax(double[] firstVector, LinearProgramSolver solver,
 			SparseMatrix rctMetArr) {
 		// set constraints
@@ -304,11 +349,9 @@ public class FindFluxModules{
 				double[] solvedMin = solver.solve(lpMax);
 				if (!lpMin.isFeasable(solvedMin)) {
 					solvedMin = firstVector;
-					isVariable[r] = true;
 				}
 				if (!lpMax.isFeasable(solvedMax)) {
 					solvedMax = firstVector;
-					isVariable[r] = true;
 				}
 
 				for (int e = 0; e < load.getNumR(); e++) {
@@ -329,8 +372,16 @@ public class FindFluxModules{
 		return isVariable;
 	}
 
-	// calculate optimum S*v=0. find all vectors which solve the equation and
-	// maximize x.
+	
+	/**<code>optimize()</code> execute a flux balance analysis for the biomass reaction in the model.
+	 * <p>
+	 * The biomass is being maximized.
+	 * <p> 
+	 * @param solver
+	 * @param rctMetArr
+	 * @return A double array with the result of the linear programm.
+	 * @throws LpSolveException
+	 */
 	public double[] optimize(LinearProgramSolver solver, SparseMatrix rctMetArr)
 			throws LpSolveException {
 
@@ -358,7 +409,11 @@ public class FindFluxModules{
 		return sol;
 	}
 
-	// build matrix with reaction and metabolites
+	
+	/**<code>matrixBuild()</code> builds a matrix with the stoichiometric values of all reactions. 
+	 * <p>
+	 * @return SparseMatrix
+	 */
 	public SparseMatrix matrixBuild() {
 		SparseMatrix rctMetArr = new SparseMatrix(load.getNumR(),
 				load.getNumS());

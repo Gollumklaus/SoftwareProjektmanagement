@@ -7,9 +7,6 @@ import java.io.PrintStream;
 import javax.xml.stream.XMLStreamException;
 import lpsolve.LpSolveException;
 
-// 0.7mb H_pylori_iIT341.xml
-// 1.7mb S_cerevisiae_iND750.xml
-// 3.2mb Y_pestis_co92.xml
 
 public class MainClass {
 
@@ -19,7 +16,7 @@ public class MainClass {
 				if("-n".equals(args[1])){
 				PrintStream err = new PrintStream(args[2]);
 				System.setErr(err);
-				System.out.println("\"-n\" option for better readability is taken. error output is saved in: \""+ args[2]+"\"");
+				System.out.println("\"-n\" option for better readability is chosen. error output is saved in: \""+ args[2]+"\"");
 				ignore = true;
 				}
 				else{
@@ -63,3 +60,8 @@ public class MainClass {
 
 	}
 }
+
+
+//0.7mb H_pylori_iIT341.xml
+//1.7mb S_cerevisiae_iND750.xml
+//3.2mb Y_pestis_co92.xml

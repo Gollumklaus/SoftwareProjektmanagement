@@ -55,8 +55,8 @@ public class TestSBML {
 	 //buildMatrix
 	 @Test
 	 public void correctRctMetMatrix(){	//compares parameter in matrix with real number of reactants/products
-		
-		FindFluxModules ff = new FindFluxModules(load);
+		boolean ignore = false;
+		FindFluxModules ff = new FindFluxModules(load,ignore);
 		SparseMatrix sm = ff.matrixBuild();
 		int count = 0;
 		for(int i=0;i<load.getNumR();i++){
