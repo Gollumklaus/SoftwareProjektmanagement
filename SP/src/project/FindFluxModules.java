@@ -18,35 +18,50 @@ import scpsolver.util.SparseMatrix;
 
 /**<code>FindFluxModules</code> calculates the flux modules of a metabolic network.
  * <p> 
- * The class needs the information of the class <code>SBMLLoad</code>.
- * <p>
+ * Important!!! The class and all its methods are needing the information of the class SBMLLoad(), represented by {@link #load load}!<p> 
+ * 
  * @author guru
  *
  */
 
 public class FindFluxModules{
 
-
+	/**Initialized class SBMLLoad. Commited by the constructor.
+	 */
 	SBMLLoad load;
+	/**
+	 * Saves the maximized value of the biomass reaction (optimized by the method optimize()).
+	 */
 	double biomassOptValue = 0;
+	/**
+	 * Is a list of lists of the Id's of the reactions of the modules, at which each inner list is one module.
+	 */
 	ArrayList<ArrayList<Integer>> adjacency = new ArrayList<ArrayList<Integer>>();
-	ArrayList<ArrayList<Reaction>> vVectors = new ArrayList<ArrayList<Reaction>>();
-	ArrayList<Integer> whichRctIsModule = new ArrayList<Integer>();
+	/**
+	 * Number of variable Reactions. Is set by {@link #computeMinModules computeMinModules}
+	 */
 	int numV = 0;
+	/**
+	 * If true, the error output is redirected to a file with the choosen path. <p>
+	 * Can be set true as a parameter with the start of the program.
+	 */
 	public boolean ignore;
 
+	//getter & setter
+	/**biomassOptValue is initialize by {@link #optimize(LinearProgramSolver solver, SparseMatrix rctMetArr) optimize}. Before that, biomassOptValue is null.
+	 * @return {@link #biomassOptValue biomassOptValue}
+	 */
 	public double getBiomassOptValue() {
 		return biomassOptValue;
 	}
-
-	public ArrayList<Integer> getWhichRctIsModule() {
-		return whichRctIsModule;
-	}
-
+	/**adjacency is initialize by {@link #dfs(boolean[] isVariable, SparseMatrix dfsArray) dfs}. Before that, adjacency is null.
+	 * @return {@link #adjacency adjacency}
+	 */
 	public ArrayList<ArrayList<Integer>> getAdjacency() {
 		return adjacency;
 	}
-
+	
+	//constructor
 	public FindFluxModules(SBMLLoad load, boolean ignore) {
 		this.load = load;
 		this.ignore = ignore;
@@ -54,6 +69,7 @@ public class FindFluxModules{
 
 	/**<code>findFlux()</code> calls all methods in <code>FindFluxModules.java</code> and passes the arguments between them.
 	 * <p> 
+	 * Needs correctly initalised {@link #load load}.<p>
 	 * @throws LpSolveException
 	 * @throws FileNotFoundException
 	 */
@@ -84,7 +100,8 @@ public class FindFluxModules{
 	}
 	/**<code>printModules()</code> print the ID's of the modules to the standard output.
 	 * <p> 
-	 * The modules are separated by lines.
+	 * The modules are separated by lines.<p>
+	 *  It needs field {@link #adjacency adjacency} and correctly initalised field {@link #load load}.<p>
 	 */
 	public void printModules() {
 		for (int i = 0; i < adjacency.size(); i++) {
@@ -103,13 +120,11 @@ public class FindFluxModules{
 	} 
 	
 	
-	/**<codes>dfs</code> makes an depth first search over a matrix.
-	 * <p> 
-	 * The boolean array just says which variables in the matrix can be ignored and which not.
-	 * <p> The results are saved in the class variable <code>adjacency</code>
-	 * 
-	 * @param isVariable
-	 * @param dfsArray
+	/**<codes>dfs</code> makes an depth first search over a matrix.<p>
+	 * <p> The results are saved in the class variable {@link #adjacency adjacency}.
+	 * Needs the correctly initalised field {@link #load load}.<p>
+	 * @param isVariable Array with a boolean value for each reaction, if true, reaction will be not ignored. Computed by {@link #minMax(double[] firstVector, LinearProgramSolver solver,SparseMatrix rctMetArr) minMax}
+	 * @param dfsArray SparseMatrix with the graph of the minimal modules. Computed by {@link #computeMinModules(boolean[] isVariable, SparseMatrix rctMetArr, LinearProgramSolver solver) computeMinModules}
 	 */
 	public void dfs(boolean[] isVariable, SparseMatrix dfsArray){
 		boolean[] grey = new boolean[load.getNumR()];
@@ -127,15 +142,16 @@ public class FindFluxModules{
 	}
 	
 	
-	/**<code>dfsHelp()</code> exists only for the recursion of <codes>dfs()</code>.
-	 * <p> 
-	 * @param i
-	 * @param isVariable
-	 * @param grey
-	 * @param dfsArray
-	 * @param neighbour
+	/**<code>dfsHelp()</code> exists only for the recursion of <codes>dfs()</code>.<p>
+	 * Needs correctly initalised field {@link #load load}.<p>
+	 *  
+	 * @param i Which knot is considered at the moment. i is the position in the array with all listed reactions, it is equal with the id's of the reactions in the SBML document. 
+	 * @param isVariable Array with a boolean value for each reaction, if true, reaction will be not ignored. Computed by {@link #minMax(double[] firstVector, LinearProgramSolver solver,SparseMatrix rctMetArr) minMax}
+	 * @param grey Marks all visited knots. 
+	 * @param dfsArray SparseMatrix with the graph of the minimal modules. Computed by {@link #computeMinModules(boolean[] isVariable, SparseMatrix rctMetArr, LinearProgramSolver solver) computeMinModules}
+	 * @param neighbour The inner list, that saves the id's of the connected components (modules). In {@link #dfs(boolean[] isVariable, SparseMatrix dfsArray) dfs} they are added to {@link #adjacency adjacency}.
 	 */
-	public void dfsHelp(int i, boolean[] isVariable, boolean[] grey, SparseMatrix dfsArray, ArrayList<Integer> neighbour){
+	private void dfsHelp(int i, boolean[] isVariable, boolean[] grey, SparseMatrix dfsArray, ArrayList<Integer> neighbour){
 		grey[i] = true;
 		for(int k=0;k<load.getNumR();k++){
 			if(isVariable[k]){
@@ -149,12 +165,13 @@ public class FindFluxModules{
 	
 	
 	/**<code>computeMinModules</code> calculates with linear programming the dependent 
-	 * sets of the stoichiometric vectors of the variable reactions.
-	 * <p>
-	 * @param isVariable
-	 * @param rctMetArr
-	 * @param solver
-	 * @return A SparseMatrix which represents a graph.
+	 * sets of the stoichiometric vectors of the variable reactions.<p>
+	 * Needs correctly initalised field {@link #load load}.<p>
+	 * 
+	 * @param isVariable Array with a boolean value for each reaction, if true, reaction will be not ignored. Computed by {@link #minMax(double[] firstVector, LinearProgramSolver solver,SparseMatrix rctMetArr) minMax}
+	 * @param rctMetArr SparseMatrix initialized by {@link #matrixBuild() matrixBuild}. Need to has the length of [number of reactions # number of metabolites].
+	 * @param solver SCPSolver
+	 * @return A SparseMatrix which represents a graph. All reactions are mapped on all reactions. A "1" represents a edge between two reactions, the rest is filled with "0".
 	 */
 	public SparseMatrix computeMinModules(boolean[] isVariable, SparseMatrix rctMetArr, LinearProgramSolver solver) {
 
@@ -264,12 +281,13 @@ public class FindFluxModules{
 	/**<code>minMax()</code> execute for all reactions a flux variability analysis. 
 	 * <p>
 	 * The method compares every minimisation value and maximisation value of a flux balance analysis of a reaction. If both values are not equal,
-	 * the reaction is variable and can be skipped in further computing.
+	 * the reaction is variable and can be skipped in further computing.<p>
+	 * Needs the correctly initalised field {@link #load load}.<p>
 	 * <p>
-	 * @param firstVector
-	 * @param solver
-	 * @param rctMetArr
-	 * @return A boolean array which elements are true for all variable values. 
+	 * @param firstVector result vector of {@link #optimize(LinearProgramSolver, SparseMatrix) optimize}
+	 * @param solver SCPSolver
+	 * @param rctMetArr SparseMatrix initialized by {@link #matrixBuild() matrixBuild}. Need to has the length of [number of reactions # number of metabolites].
+	 * @return isVariable A boolean array which elements are true for all variable values. It has the length of the number of all reactions.
 	 */
 	public boolean[] minMax(double[] firstVector, LinearProgramSolver solver,
 			SparseMatrix rctMetArr) {
@@ -376,10 +394,11 @@ public class FindFluxModules{
 	/**<code>optimize()</code> execute a flux balance analysis for the biomass reaction in the model.
 	 * <p>
 	 * The biomass is being maximized.
+	 * Needs the correctly initalised field {@link #load load}.<p>
 	 * <p> 
-	 * @param solver
-	 * @param rctMetArr
-	 * @return A double array with the result of the linear programm.
+	 * @param solver SCPSolver
+	 * @param rctMetArr SparseMatrix initialized by {@link #matrixBuild() matrixBuild}. Need to has the length of [number of reactions # number of metabolites].
+	 * @return A double array with the result of the linear programm, which has optimized the biomass. 
 	 * @throws LpSolveException
 	 */
 	public double[] optimize(LinearProgramSolver solver, SparseMatrix rctMetArr)
@@ -410,9 +429,10 @@ public class FindFluxModules{
 	}
 
 	
-	/**<code>matrixBuild()</code> builds a matrix with the stoichiometric values of all reactions. 
+	/**<code>matrixBuild()</code> builds a matrix with the stoichiometric values of all reactions.<p>
 	 * <p>
-	 * @return SparseMatrix
+	 * Needs the correctly initalised field {@link #load load}.<p>
+	 * @return A SparseMatrix which stores the stochiometric values for all metabolite of each reaction. 
 	 */
 	public SparseMatrix matrixBuild() {
 		SparseMatrix rctMetArr = new SparseMatrix(load.getNumR(),
@@ -452,7 +472,10 @@ public class FindFluxModules{
 
 		return rctMetArr;
 	}
-
+	/**Shortcut for "System.out.print"
+	 * 
+	 * @param s
+	 */
 	public void pr(String s) {
 		System.out.print(s);
 	}

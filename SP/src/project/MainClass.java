@@ -7,9 +7,18 @@ import java.io.PrintStream;
 import javax.xml.stream.XMLStreamException;
 import lpsolve.LpSolveException;
 
-
+/**Is the startpoint of the program and coordinates it.<p>
+ * 
+ * @author guru
+ *
+ */
 public class MainClass {
 
+	/**Option -n redirected the error output to a file.<p>
+	 *  
+	 * @param args Start the program on the console with "MainClass.java PATHOFSBML" or "MainClass.java PATHOFSBML -n PATHFORERROR" for better readability.
+	 * @throws FileNotFoundException
+	 */
 	public static void main(String args[]) throws FileNotFoundException {	
 		boolean ignore = false;
 		if(args.length>1){
