@@ -123,8 +123,8 @@ public class FindFluxModules{
 	/**<codes>dfs</code> makes an depth first search over a matrix.<p>
 	 * <p> The results are saved in the class variable {@link #adjacency adjacency}.
 	 * Needs the correctly initalised field {@link #load load}.<p>
-	 * @param isVariable Array with a boolean value for each reaction, if true, reaction will be not ignored. Computed by {@link #minMax(double[] firstVector, LinearProgramSolver solver,SparseMatrix rctMetArr) minMax}
-	 * @param dfsArray SparseMatrix with the graph of the minimal modules. Computed by {@link #computeMinModules(boolean[] isVariable, SparseMatrix rctMetArr, LinearProgramSolver solver) computeMinModules}
+	 * @param isVariable Array with a boolean value for each reaction, if true, reaction will be not ignored. Computed by {@link #minMax(double[] firstVector, LinearProgramSolver solver,SparseMatrix rctMetArr) minMax}. Length is equal with the number of reactions in the SBML document. 
+	 * @param dfsArray SparseMatrix with the graph of the minimal modules. Computed by {@link #computeMinModules(boolean[] isVariable, SparseMatrix rctMetArr, LinearProgramSolver solver) computeMinModules}.  Length and depth is equal with the number of reactions in the SBML document. 
 	 */
 	public void dfs(boolean[] isVariable, SparseMatrix dfsArray){
 		boolean[] grey = new boolean[load.getNumR()];
@@ -146,8 +146,8 @@ public class FindFluxModules{
 	 * Needs correctly initalised field {@link #load load}.<p>
 	 *  
 	 * @param i Which knot is considered at the moment. i is the position in the array with all listed reactions, it is equal with the id's of the reactions in the SBML document. 
-	 * @param isVariable Array with a boolean value for each reaction, if true, reaction will be not ignored. Computed by {@link #minMax(double[] firstVector, LinearProgramSolver solver,SparseMatrix rctMetArr) minMax}
-	 * @param grey Marks all visited knots. 
+	 * @param isVariable Array with a boolean value for each reaction, if true, reaction will be not ignored. Computed by {@link #minMax(double[] firstVector, LinearProgramSolver solver,SparseMatrix rctMetArr) minMax}.  Length is equal with the number of reactions in the SBML document. 
+	 * @param grey Marks all visited knots.  Length is equal with the number of reactions in the SBML document. 
 	 * @param dfsArray SparseMatrix with the graph of the minimal modules. Computed by {@link #computeMinModules(boolean[] isVariable, SparseMatrix rctMetArr, LinearProgramSolver solver) computeMinModules}
 	 * @param neighbour The inner list, that saves the id's of the connected components (modules). In {@link #dfs(boolean[] isVariable, SparseMatrix dfsArray) dfs} they are added to {@link #adjacency adjacency}.
 	 */
@@ -168,7 +168,7 @@ public class FindFluxModules{
 	 * sets of the stoichiometric vectors of the variable reactions.<p>
 	 * Needs correctly initalised field {@link #load load}.<p>
 	 * 
-	 * @param isVariable Array with a boolean value for each reaction, if true, reaction will be not ignored. Computed by {@link #minMax(double[] firstVector, LinearProgramSolver solver,SparseMatrix rctMetArr) minMax}
+	 * @param isVariable Array with a boolean value for each reaction, if true, reaction will be not ignored. Computed by {@link #minMax(double[] firstVector, LinearProgramSolver solver,SparseMatrix rctMetArr) minMax}.  Length is equal with the number of reactions in the SBML document. 
 	 * @param rctMetArr SparseMatrix initialized by {@link #matrixBuild() matrixBuild}. Need to has the length of [number of reactions # number of metabolites].
 	 * @param solver SCPSolver
 	 * @return A SparseMatrix which represents a graph. All reactions are mapped on all reactions. A "1" represents a edge between two reactions, the rest is filled with "0".
@@ -284,7 +284,7 @@ public class FindFluxModules{
 	 * the reaction is variable and can be skipped in further computing.<p>
 	 * Needs the correctly initalised field {@link #load load}.<p>
 	 * <p>
-	 * @param firstVector result vector of {@link #optimize(LinearProgramSolver, SparseMatrix) optimize}
+	 * @param firstVector result vector of {@link #optimize(LinearProgramSolver, SparseMatrix) optimize}. Length is equal with the number of reactions in the SBML document. 
 	 * @param solver SCPSolver
 	 * @param rctMetArr SparseMatrix initialized by {@link #matrixBuild() matrixBuild}. Need to has the length of [number of reactions # number of metabolites].
 	 * @return isVariable A boolean array which elements are true for all variable values. It has the length of the number of all reactions.
